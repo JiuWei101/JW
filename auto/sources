@@ -1,0 +1,28 @@
+# Copyright (C) cvvnx1@163.com
+# Copyright (C) www.91160.com, Inc.
+
+SRC_FILES="src/main/java/com/nykj/base/example/Bootstrap.java \
+           src/main/java/com/nykj/base/example/controller/interceptor/SecurityInterceptor.java \
+           src/main/java/com/nykj/base/example/controller/TestController.java \
+           src/main/java/com/nykj/base/example/dao/TestMapper.java \
+           src/main/java/com/nykj/base/example/model/TestModel.java \
+           src/main/java/com/nykj/base/example/service/TestService.java \
+           src/main/java/com/nykj/base/example/util/SpringBeanUtil.java"
+
+RES_FILES="src/main/resources/conf/config.properties \
+           src/main/resources/conf/db.properties \
+           src/main/resources/conf/log4j.properties \
+           src/main/resources/mapper/TestMapper.xml \
+           src/main/resources/spring/mvc-servlet.xml \
+           src/main/resources/spring/spring-all.xml \
+           src/main/resources/spring/spring-context.xml \
+           src/main/resources/spring/spring-db.xml \
+           src/main/resources/spring/spring-props.xml"
+
+WEB_FILES="src/main/webapp/WEB-INF/web.xml"
+
+
+TEST_SRC_FILES="src/test/java/com/nykj/base/example/service/TestServiceTest.java \
+               "
+
+OLD_BASE_PKG="com\.nykj\.base\.example"

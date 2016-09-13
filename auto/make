@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# Copyright (C) cvvnx1@163.com
+# Copyright (C) www.91160.com, Inc.
+
+
+. auto/sources
+. auto/settings
+
+
+# set code
+for FILE in $SRC_FILES; do
+  gsed -i "s/${OLD_BASE_PKG}/${BASE_PKG}/g" $FILE
+done;
+
+for FILE in $RES_FILES; do
+  gsed -i "s/${OLD_BASE_PKG}/${BASE_PKG}/g" $FILE
+done;
+
+for FILE in $WEB_FILES; do
+  gsed -i "s/${OLD_BASE_PKG}/${BASE_PKG}/g" $FILE
+done;
+
+for FILE in $TEST_SRC_FILES; do
+  gsed -i "s/${OLD_BASE_PKG}/${BASE_PKG}/g" $FILE
+done;
+
+
+# set pom.xml
+gsed -i "6s#<groupId>.*</groupId>#<groupId>${GROUP_ID}</groupId>#g" pom.xml
+gsed -i "7s#<artifactId>.*</artifactId>#<artifactId>${ARTIFACT_ID}</artifactId>#g" pom.xml
+
+
+# set folders
+MV_SRC=$(echo "src.main.java.$OLD_BASE_PKG" | tr -s "." "/" | tr -d "\\")
+MV_DST=$(echo "src.main.java.$NEW_PKG" | tr -s "." "/")
+
+MV_TEST_SRC=$(echo "src.test.java.$OLD_BASE_PKG" | tr -s "." "/" | tr -d "\\")
+MV_TEST_DST=$(echo "src.test.java.$NEW_PKG" | tr -s "." "/")
+
+mkdir -p `dirname "$MV_DST"`
+mkdir -p `dirname "$MV_TEST_DST"`
+
+mv $MV_SRC $MV_DST
+mv $MV_TEST_SRC $MV_TEST_DST
+
+rm -rf `find src/main/java -type d -empty`
+rm -rf `find src/test/java -type d -empty`
+
+
+# clean git setting
+rm -rf .git/
+
+
+# delete self
+rm -rf auto/

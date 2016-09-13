@@ -1,0 +1,3 @@
+BASE_PKG="com.nykj.base.example"
+GROUP_ID="com.nykj.base"
+ARTIFACT_ID="example"
