@@ -17,5 +17,4 @@ and they lived at the bottom of a well.</p>
 soup = BeautifulSoup(html_text, 'lxml')
 title = soup.find('title')
 title.string = title.string.replace('The','')
-
 print(soup.find('title'))

@@ -9,7 +9,6 @@ class ParserEtc(object):
         self.path = path
 
     def run(self):
-        #resp = self.getPage(self.path)
         resp = open(self.path, encoding='utf-8')
         soup = BeautifulSoup(resp, 'lxml')
         #self.getText(soup,'Investment \nobjective')
