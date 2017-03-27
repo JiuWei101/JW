@@ -11,23 +11,8 @@ class ParserEtc(object):
     def run(self):
         resp = open(self.path, encoding='utf-8')
         soup = BeautifulSoup(resp, 'lxml')
-        #self.getText(soup,'Investment \nobjective')
         self.init(soup)
-        self.getText(soup, 'Investment objective')
-        print('--------- Shareholder fees data ---------')
-        self.getTable(soup, 'Shareholder.*fees')
-        print('--------- Annual fund data --------------')
-        self.getTable(soup, 'Annual.*fund')
-        print('--------- Expenses ----------------------')
-        self.getTable(soup, 'Expenses')
-        print('--------- Principal risks ---------------')
-        self.getText(soup, 'Principal risks')
-        print('--------- Credit and counterparty risk --')
-        self.getText(soup, 'Credit and counterparty risk.')
-        print('--------- Currency risk -----------------')
-        self.getText(soup, 'Currency risk.')
-        print('--------- Cybersecurity risk. -----------------')
-        self.getText(soup, 'Cybersecurity risk.')
+        self.getAllTableFromNext(soup, 'Assets and.*Liabilities')
 
     def init(self, soup):
         # remove all '\n' char
@@ -72,16 +57,164 @@ class ParserEtc(object):
                 print(next_tag.text.replace('\n',''))
             break
 
-    def getTable(self, soup, title_name):
-        shareholder_tag = soup.find(text=re.compile(title_name))
-        if shareholder_tag is None:
+    def getAllTableFromPro(self, soup, title_name):
+        tags = soup.find_all(text=re.compile(title_name))
+        if tags is not None:
+            for tag in tags:
+                self.parseTable(soup, tag, False)
+
+    def getAllTableFromNext(self, soup, title_name):
+        tags = soup.find_all(text=re.compile(title_name))
+        if tags is not None:
+            for tag in tags:
+                parent_tag = tag.find_parent('table')
+                if parent_tag is not None:
+                    statement_tag = parent_tag.previous_element.previous_element
+                    if statement_tag.find('Statement \nof') != -1:
+                        print('=============================================================')
+                        #self.parseTable(soup, statement_tag.previous_element, True)
+                        self.parseAssetsTable(statement_tag.previous_element)
+                        self.parseOperationsTable(statement_tag.previous_element)
+                        self.parseHighlightTable(statement_tag.previous_element)
+
+    def getTableTag(self, current_tag, isNext):
+        if current_tag is None:
+            return
+        next_tag = current_tag
+        if isNext:
+            while True:
+                next_tag = next_tag.next_element
+                if next_tag is None:
+                    break
+                if isinstance(next_tag, Tag) and next_tag.name.lower() == 'table':
+                    break
+        else:
+            next_tag = next_tag.find_parent('table')
+        return next_tag
+
+    def parseAssetsTable(self, current_tag):
+        this_tag = current_tag
+        key_words = {'Statement':False,'Assets':False,'Liabilities':False}
+        key_words_next = {'Statement': False, 'Operations': False}
+        while True:
+            this_tag = this_tag.next_element
+            if this_tag is None:
+                break
+            if isinstance(this_tag, Tag):
+                if this_tag.text.find('Statement') != -1:
+                    key_words['Statement'] = True
+                if this_tag.text.find('Assets') != -1:
+                    key_words['Assets'] = True
+                if this_tag.text.find('Liabilities') != -1:
+                    key_words['Liabilities'] = True
+
+                if this_tag.text.find('Statement') != -1:
+                    key_words_next['Statement'] = True
+                if this_tag.text.find('Operations') != -1:
+                    key_words_next['Operations'] = True
+
+            if isinstance(this_tag, NavigableString):
+                if this_tag.find('Statement') != -1:
+                    key_words['Statement'] = True
+                if this_tag.find('Assets') != -1:
+                    key_words['Assets'] = True
+                if this_tag.find('Liabilities') != -1:
+                    key_words['Liabilities'] = True
+
+                if this_tag.find('Statement') != -1:
+                    key_words_next['Statement'] = True
+                if this_tag.find('Operations') != -1:
+                    key_words_next['Operations'] = True
+
+            if key_words_next['Statement'] and key_words_next['Operations']:
+                break
+
+            if key_words['Statement'] and key_words['Assets'] and key_words['Liabilities']:
+                table_tag = self.getTableTag(this_tag, True)
+                if table_tag is None:
+                    break
+                print('---------- get a assets table------------')
+                self.getDataFromTable(table_tag)
+                key_words['Statement'] = False
+                key_words['Assets'] = False
+                key_words['Liabilities'] = False
+
+    def parseOperationsTable(self, current_tag):
+        this_tag = current_tag
+        key_words = {'Statement':False,'Operations':False}
+        key_words_next = {'Financial': False, 'Highlights': False}
+        while True:
+            this_tag = this_tag.next_element
+            if this_tag is None:
+                break
+            if isinstance(this_tag, Tag):
+                if this_tag.text.find('Statement') != -1:
+                    key_words['Statement'] = True
+                if this_tag.text.find('Operations') != -1:
+                    key_words['Operations'] = True
+
+                if this_tag.text.find('Financial') != -1:
+                    key_words_next['Financial'] = True
+                if this_tag.text.find('Highlights') != -1:
+                    key_words_next['Highlights'] = True
+
+            if isinstance(this_tag, NavigableString):
+                if this_tag.find('Statement') != -1:
+                    key_words['Statement'] = True
+                if this_tag.find('Operations') != -1:
+                    key_words['Operations'] = True
+
+                if this_tag.find('Financial') != -1:
+                    key_words_next['Financial'] = True
+                if this_tag.find('Highlights') != -1:
+                    key_words_next['Highlights'] = True
+
+            if key_words_next['Financial'] and key_words_next['Highlights']:
+                break
+
+            if key_words['Statement'] and key_words['Operations']:
+                table_tag = self.getTableTag(this_tag, True)
+                if table_tag is None:
+                    break
+                print('---------- get a Operations table------------')
+                self.getDataFromTable(table_tag)
+                key_words['Statement'] = False
+                key_words['Operations'] = False
+
+    def parseHighlightTable(self, current_tag):
+        this_tag = current_tag
+        key_words = {'Financial':False,'Highlights':False}
+        while True:
+            this_tag = this_tag.next_element
+            if this_tag is None:
+                break
+            if isinstance(this_tag, Tag):
+                if this_tag.text.find('Financial') != -1:
+                    key_words['Financial'] = True
+                if this_tag.text.find('Highlights') != -1:
+                    key_words['Highlights'] = True
+            if isinstance(this_tag, NavigableString):
+                if this_tag.find('Financial') != -1:
+                    key_words['Financial'] = True
+                if this_tag.find('Highlights') != -1:
+                    key_words['Highlights'] = True
+
+            if key_words['Financial'] and key_words['Highlights']:
+                table_tag = self.getTableTag(this_tag, True)
+                if table_tag is None:
+                    break
+                print('---------- get a Highlights table------------')
+                self.getDataFromTable(table_tag)
+                key_words['Financial'] = False
+                key_words['Highlights'] = False
+
+    def getDataFromTable(self,table_tag):
+        if table_tag is None or table_tag.name.lower() != 'table':
+            print('This is not a table.')
             return
 
         shareholder_table = []
-        next_tag = shareholder_tag.find_parent('table')
-        if next_tag is None:
-            print('This is not a table.')
-            return
+        next_tag = table_tag
         while True:
             next_tag = next_tag.next_element
             if next_tag is None:
@@ -118,7 +251,6 @@ class ParserEtc(object):
 
 
 #---- main -----
-docPath = 'E:\\code\\documents\\121956075_487a573f-04b3-4489-8aa4-069734eb4804\\DM_DOC_1.htm'
-#docPath = 'https://www.sec.gov/Archives/edgar/data/722574/000137949117000307/filing723.htm'
+docPath = 'D:\\Document\\research\\documents\\AnnualReport\\114257419__2\\Temp_DM_DOC_2.htm'
 parser = ParserEtc(docPath)
 parser.run()
